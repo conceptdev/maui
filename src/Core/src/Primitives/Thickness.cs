@@ -102,19 +102,29 @@ namespace Microsoft.Maui
 
 		public static Thickness Zero = new Thickness(0);
 
-		public static Thickness operator +(Thickness left, double addend)
+		public static Thickness operator +(Thickness a, double b)
 		{
-			if (addend == 0)
+			if (b == 0)
 			{
-				return left;
+				return a;
 			}
 
-			return new Thickness(left.Left + addend, left.Top + addend, left.Right + addend, left.Bottom + addend);
+			return new Thickness(a.Left + b, a.Top + b, a.Right + b, a.Bottom + b);
 		}
 
-		public static Thickness operator -(Thickness left, double addend)
+		public static Thickness operator +(Thickness a, Thickness b) 
+		{ 
+			return new Thickness(a.Left + b.Left, a.Top + b.Top, a.Right + b.Right, a.Bottom + b.Bottom);
+		}
+
+		public static Thickness operator -(Thickness a, double b)
 		{
-			return left + (-addend);
+			return a + (-b);
+		}
+
+		public static Thickness operator -(Thickness a, Thickness b)
+		{
+			return new Thickness(a.Left - b.Left, a.Top - b.Top, a.Right - b.Right, a.Bottom - b.Bottom);
 		}
 	}
 }

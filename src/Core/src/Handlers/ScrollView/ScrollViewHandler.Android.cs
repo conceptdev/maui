@@ -1,4 +1,6 @@
-﻿using Android.Views;
+﻿using System;
+using Android.Views;
+using Microsoft.Maui.Graphics;
 
 namespace Microsoft.Maui.Handlers
 {
@@ -41,7 +43,57 @@ namespace Microsoft.Maui.Handlers
 			if (handler.NativeView == null || handler.MauiContext == null)
 				return;
 
-			handler.NativeView.UpdateContent(scrollView.PresentedContent, handler.MauiContext);
+			var padding = scrollView.Padding;
+
+			if (padding == Thickness.Zero || scrollView.PresentedContent == null)
+			{
+				handler.NativeView.UpdateContent(scrollView.PresentedContent, handler.MauiContext);
+			}
+			else
+			{
+				var context = handler.MauiContext.Context;
+
+				var currentPaddingShim = handler.NativeView.FindViewWithTag("MAUIPaddingShim") as ContentViewGroup;
+
+				// TODO ezhart Make padding a Func<Thickness>; only add shim if Padding > 0, and if Padding returns to zero just leave the shim
+				if (currentPaddingShim != null)
+				{
+					currentPaddingShim.RemoveAllViews();
+					currentPaddingShim.AddView(scrollView.PresentedContent.ToNative(handler.MauiContext));
+				}
+				else
+				{
+					var paddingShim = new ContentViewGroup(context!)
+					{
+						CrossPlatformMeasure = IncludePadding(scrollView.PresentedContent.Measure, padding),
+						CrossPlatformArrange = scrollView.PresentedContent.Arrange,
+						Tag = "MAUIPaddingShim" // TODO ezhart Make this a constant, replace it above, too
+					};
+
+					handler.NativeView.RemoveAllViews();
+					paddingShim.AddView(scrollView.PresentedContent.ToNative(handler.MauiContext));
+					handler.NativeView.SetContent(paddingShim);
+				}
+			}
+		}
+
+		static Func<double, double, Size> IncludePadding(Func<double, double, Size> internalMeasure, Thickness padding) 
+		{
+			return (widthConstraint, heightConstraint) => {
+
+				var measurementWidth = widthConstraint - padding.HorizontalThickness;
+				var measurementHeight = heightConstraint - padding.VerticalThickness;
+
+				var result = internalMeasure.Invoke(measurementWidth, measurementHeight);
+				
+				return new Size(result.Width + padding.HorizontalThickness, result.Height + padding.VerticalThickness); 
+			};
+		}
+
+		public static void MapPadding(ScrollViewHandler handler, IScrollView scrollView)
+		{
+			//handler.NativeView.SetInternalPadding(scrollView.Padding);
+			MapContent(handler, scrollView);
 		}
 
 		public static void MapHorizontalScrollBarVisibility(ScrollViewHandler handler, IScrollView scrollView)

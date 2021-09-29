@@ -186,6 +186,8 @@ namespace Microsoft.Maui
 
 		protected override void OnLayout(bool changed, int left, int top, int right, int bottom)
 		{
+			var xplatHeight = Context!.FromPixels(bottom);
+
 			base.OnLayout(changed, left, top, right, bottom);
 
 			if (_hScrollView != null && _hScrollView.Parent == this)
@@ -193,6 +195,71 @@ namespace Microsoft.Maui
 				_hScrollView.Layout(0, 0, right - left, bottom - top);
 			}
 		}
+
+		//int _leftPadding;
+		//int _topPadding;
+		//int _rightPadding;
+		//int _bottomPadding;
+
+		//public void SetInternalPadding(Thickness padding) 
+		//{
+		//	var context = Context ?? throw new InvalidOperationException("Context cannot be null.");
+		//	(var l, var t, var r, var b) = context.ToPixels(padding);
+
+		//	_leftPadding = l;
+		//	_topPadding = t;
+		//	_rightPadding = r;
+		//	_bottomPadding = b;
+		//}
+
+		//protected override void OnMeasure(int widthMeasureSpec, int heightMeasureSpec)
+		//{
+		//	//base.OnMeasure(widthMeasureSpec, heightMeasureSpec);
+
+		//	var context = Context ?? throw new InvalidOperationException("Context cannot be null");
+
+		//	if (ChildCount == 0)
+		//	{
+		//		return;
+		//	}
+
+		//	var child = GetChildAt(0);
+
+		//	if (child == null)
+		//	{
+		//		return;
+		//	}
+
+		//	var owms = widthMeasureSpec;
+		//	var ohms = heightMeasureSpec;
+
+		//	var width = MeasureSpec.GetSize(widthMeasureSpec);
+		//	var height = MeasureSpec.GetSize(heightMeasureSpec);
+		//	var widthMode = MeasureSpec.GetMode(widthMeasureSpec);
+		//	var heightMode = MeasureSpec.GetMode(heightMeasureSpec);
+
+		//	var horizontalPadding = _leftPadding + _rightPadding;
+		//	var verticalPadding = _topPadding + _bottomPadding;
+
+		//	if (widthMode != MeasureSpecMode.Unspecified)
+		//	{
+		//		width -= horizontalPadding;
+		//	}
+
+		//	if (heightMode != MeasureSpecMode.Unspecified)
+		//	{
+		//		height -= verticalPadding;
+		//	}
+
+		//	widthMeasureSpec = MeasureSpec.MakeMeasureSpec(width, widthMode);
+		//	heightMeasureSpec = MeasureSpec.MakeMeasureSpec(height, heightMode);
+
+		//	child.Measure(widthMeasureSpec, heightMeasureSpec);
+
+		//	var xplatHeight = context.FromPixels(child.MeasuredHeight + verticalPadding);
+			
+		//	SetMeasuredDimension(child.MeasuredWidth + horizontalPadding, child.MeasuredHeight + verticalPadding);
+		//}
 
 		public void ScrollTo(int x, int y, bool instant, Action finished)
 		{
@@ -375,5 +442,81 @@ namespace Microsoft.Maui
 		bool ScrollBarsInitialized { get; set; }
 		bool ScrollbarFadingEnabled { get; set; }
 		void AwakenScrollBars();
+	}
+
+	public class PaddingShimViewGroup : ViewGroup
+	{
+		public PaddingShimViewGroup(Context? context) : base(context)
+		{
+		}
+
+		public PaddingShimViewGroup(IntPtr javaReference, JniHandleOwnership transfer) : base(javaReference, transfer)
+		{
+		}
+
+		public PaddingShimViewGroup(Context? context, IAttributeSet? attrs) : base(context, attrs)
+		{
+		}
+
+		public PaddingShimViewGroup(Context? context, IAttributeSet? attrs, int defStyleAttr) : base(context, attrs, defStyleAttr)
+		{
+		}
+
+		public PaddingShimViewGroup(Context? context, IAttributeSet? attrs, int defStyleAttr, int defStyleRes) : base(context, attrs, defStyleAttr, defStyleRes)
+		{
+		}
+
+		protected override void OnLayout(bool changed, int l, int t, int r, int b)
+		{
+			if (this.ChildCount == 0)
+			{
+				return;
+			}
+
+			var child = this.GetChildAt(0);
+
+			if (child == null)
+			{
+				return;
+			}
+
+			//	child.Layout(l, t, r, b);
+		}
+
+		protected override void OnMeasure(int widthMeasureSpec, int heightMeasureSpec)
+		{
+			var context = Context ?? throw new InvalidOperationException("Context cannot be null");
+
+			if (ChildCount == 0)
+			{
+				return;
+			}
+
+			var child = GetChildAt(0) ?? throw new InvalidOperationException("Content cannot be null");
+
+			var width = MeasureSpec.GetSize(widthMeasureSpec);
+			var height = MeasureSpec.GetSize(heightMeasureSpec);
+			var widthMode = MeasureSpec.GetMode(widthMeasureSpec);
+			var heightMode = MeasureSpec.GetMode(heightMeasureSpec);
+
+			var horizontalPadding = PaddingLeft + PaddingRight;
+			var verticalPadding = PaddingTop + PaddingBottom;
+
+			if (widthMode != MeasureSpecMode.Unspecified)
+			{
+				width -= horizontalPadding;
+			}
+
+			if (heightMode != MeasureSpecMode.Unspecified)
+			{
+				height -= verticalPadding;
+			}
+
+			widthMeasureSpec = MeasureSpec.MakeMeasureSpec(width, widthMode);
+			heightMeasureSpec = MeasureSpec.MakeMeasureSpec(height, heightMode);
+
+			child.Measure(widthMeasureSpec, heightMeasureSpec);
+			SetMeasuredDimension(child.MeasuredWidth + horizontalPadding, child.MeasuredHeight + verticalPadding);
+		}
 	}
 }

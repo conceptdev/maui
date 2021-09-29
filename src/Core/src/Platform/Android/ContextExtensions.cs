@@ -251,5 +251,14 @@ namespace Microsoft.Maui
 
 			return null;
 		}
+
+		// TODO ezhart Verify we're still using this when all is said and done
+		public static (int left, int top, int right, int bottom) ToPixels(this Context context, Thickness thickness)
+		{
+			return ((int)context.ToPixels(thickness.Left),
+				(int)context.ToPixels(thickness.Top),
+				(int)context.ToPixels(thickness.Right),
+				(int)context.ToPixels(thickness.Bottom));
+		}
 	}
 }
