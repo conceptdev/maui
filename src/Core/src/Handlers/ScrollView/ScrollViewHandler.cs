@@ -13,8 +13,6 @@ namespace Microsoft.Maui.Handlers
 			[nameof(IScrollView.Orientation)] = MapOrientation,
 #if __IOS__
 			[nameof(IScrollView.ContentSize)] = MapContentSize
-#elif __ANDROID__
-			[nameof(IScrollView.Padding)] = MapPadding
 #endif
 		};
 

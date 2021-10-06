@@ -1,11 +1,14 @@
 ﻿using System;
 using Android.Views;
 using Microsoft.Maui.Graphics;
+using static Microsoft.Maui.Layouts.LayoutExtensions;
 
 namespace Microsoft.Maui.Handlers
 {
 	public partial class ScrollViewHandler : ViewHandler<IScrollView, MauiScrollView>
 	{
+		const string InsetPanelTag = "MAUIContentInsetPanel";
+
 		protected override MauiScrollView CreateNativeView()
 		{
 			return new MauiScrollView(
@@ -43,57 +46,14 @@ namespace Microsoft.Maui.Handlers
 			if (handler.NativeView == null || handler.MauiContext == null)
 				return;
 
-			var padding = scrollView.Padding;
-
-			if (padding == Thickness.Zero || scrollView.PresentedContent == null)
+			if (NeedsInsetView(scrollView))
 			{
-				handler.NativeView.UpdateContent(scrollView.PresentedContent, handler.MauiContext);
+				UpdateInsetView(scrollView, handler);
 			}
 			else
 			{
-				var context = handler.MauiContext.Context;
-
-				var currentPaddingShim = handler.NativeView.FindViewWithTag("MAUIPaddingShim") as ContentViewGroup;
-
-				// TODO ezhart Make padding a Func<Thickness>; only add shim if Padding > 0, and if Padding returns to zero just leave the shim
-				if (currentPaddingShim != null)
-				{
-					currentPaddingShim.RemoveAllViews();
-					currentPaddingShim.AddView(scrollView.PresentedContent.ToNative(handler.MauiContext));
-				}
-				else
-				{
-					var paddingShim = new ContentViewGroup(context!)
-					{
-						CrossPlatformMeasure = IncludePadding(scrollView.PresentedContent.Measure, padding),
-						CrossPlatformArrange = scrollView.PresentedContent.Arrange,
-						Tag = "MAUIPaddingShim" // TODO ezhart Make this a constant, replace it above, too
-					};
-
-					handler.NativeView.RemoveAllViews();
-					paddingShim.AddView(scrollView.PresentedContent.ToNative(handler.MauiContext));
-					handler.NativeView.SetContent(paddingShim);
-				}
+				handler.NativeView.UpdateContent(scrollView.PresentedContent, handler.MauiContext);
 			}
-		}
-
-		static Func<double, double, Size> IncludePadding(Func<double, double, Size> internalMeasure, Thickness padding) 
-		{
-			return (widthConstraint, heightConstraint) => {
-
-				var measurementWidth = widthConstraint - padding.HorizontalThickness;
-				var measurementHeight = heightConstraint - padding.VerticalThickness;
-
-				var result = internalMeasure.Invoke(measurementWidth, measurementHeight);
-				
-				return new Size(result.Width + padding.HorizontalThickness, result.Height + padding.VerticalThickness); 
-			};
-		}
-
-		public static void MapPadding(ScrollViewHandler handler, IScrollView scrollView)
-		{
-			//handler.NativeView.SetInternalPadding(scrollView.Padding);
-			MapContent(handler, scrollView);
 		}
 
 		public static void MapHorizontalScrollBarVisibility(ScrollViewHandler handler, IScrollView scrollView)
@@ -130,6 +90,124 @@ namespace Microsoft.Maui.Handlers
 
 			handler.NativeView.ScrollTo(horizontalOffsetDevice, verticalOffsetDevice,
 				request.Instant, () => handler.VirtualView.ScrollFinished());
+		}
+
+		/*
+			Android treats Padding differently than we want for MAUI. The Padding creates space
+			_around_ the scrollable area, rather than padding the content inside of it. Also, the ScrollView control
+			will ignore the cross-platform Margin of its content when making native Measure calls. We can correct
+			this when later making the CrossPlatformMeasure call, but the internal content size values of
+			the native ScrollView will not account for the margin, and the control won't scroll all the way to the
+			bottom of the content. 
+
+			To handle this, we detect whether the content has a Margin or the cross-platform ScrollView has a Padding;
+			if so, we insert a container ContentViewGroup which always lays out at the origin but provides both the Padding
+			and the Margin for the content. The extra layer is only inserted if necessary, and is removed if the Padding
+			and Margin are set to zero. The extra layer uses the native ContentViewGroup control we already provide
+			as the backing control for ContentView, Page, etc. 
+
+			The methods below exist to support inserting/updating the padding/margin control.
+		*/
+
+		static bool NeedsInsetView(IScrollView scrollView)
+		{
+			if (scrollView.PresentedContent == null)
+			{
+				return false;
+			}
+
+			if (scrollView.Padding != Thickness.Zero)
+			{
+				return true;
+			}
+
+			if (scrollView.PresentedContent.Margin != Thickness.Zero)
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		static void UpdateInsetView(IScrollView scrollView, ScrollViewHandler handler)
+		{
+			if (scrollView.PresentedContent == null || handler.MauiContext == null)
+			{
+				return;
+			}
+
+			var nativeContent = scrollView.PresentedContent.ToNative(handler.MauiContext);
+
+			if (handler.NativeView.FindViewWithTag(InsetPanelTag) is ContentViewGroup currentPaddingLayer)
+			{
+				if (currentPaddingLayer.ChildCount == 0 || currentPaddingLayer.GetChildAt(0) != nativeContent)
+				{
+					currentPaddingLayer.RemoveAllViews();
+					currentPaddingLayer.AddView(nativeContent);
+				}
+			}
+			else
+			{
+				InsertInsetView(handler, scrollView, nativeContent);
+			}
+		}
+
+		static void InsertInsetView(ScrollViewHandler handler, IScrollView scrollView, View nativeContent)
+		{
+			if (scrollView.PresentedContent == null || handler.MauiContext?.Context == null)
+			{
+				return;
+			}
+
+			var paddingShim = new ContentViewGroup(handler.MauiContext.Context)
+			{
+				CrossPlatformMeasure = IncludeScrollViewInsets(scrollView.PresentedContent.Measure, scrollView),
+				CrossPlatformArrange = scrollView.CrossPlatformArrange,
+				Tag = InsetPanelTag
+			};
+
+			handler.NativeView.RemoveAllViews();
+			paddingShim.AddView(nativeContent);
+			handler.NativeView.SetContent(paddingShim);
+		}
+
+		static Func<double, double, Size> IncludeScrollViewInsets(Func<double, double, Size> internalMeasure, IScrollView scrollView)
+		{
+			return (widthConstraint, heightConstraint) =>
+			{
+				return InsetScrollView(widthConstraint, heightConstraint, internalMeasure, scrollView);
+			};
+		}
+
+		static Size InsetScrollView(double widthConstraint, double heightConstraint, Func<double, double, Size> internalMeasure, IScrollView scrollView)
+		{
+			var padding = scrollView.Padding;
+
+			if (scrollView.PresentedContent == null)
+			{
+				return new Size(padding.HorizontalThickness, padding.VerticalThickness);
+			}
+
+			// Exclude the padding while measuring the internal content ...
+			var measurementWidth = widthConstraint - padding.HorizontalThickness;
+			var measurementHeight = heightConstraint - padding.VerticalThickness;
+
+			var result = internalMeasure.Invoke(measurementWidth, measurementHeight);
+
+			// ... and add the padding back in to the final result
+			var fullSize = new Size(result.Width + padding.HorizontalThickness, result.Height + padding.VerticalThickness);
+
+			if (double.IsInfinity(widthConstraint))
+			{
+				widthConstraint = result.Width;
+			}
+
+			if (double.IsInfinity(heightConstraint))
+			{
+				heightConstraint = result.Height;
+			}
+
+			return fullSize.AdjustForFill(new Rectangle(0, 0, widthConstraint, heightConstraint), scrollView.PresentedContent);
 		}
 	}
 }
