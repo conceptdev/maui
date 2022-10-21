@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.DeviceTests.Stubs;
@@ -22,13 +22,13 @@ namespace Microsoft.Maui.DeviceTests
 		string GetNativeText(EditorHandler editorHandler) =>
 			GetNativeEditor(editorHandler).Text;
 
-		static void SetNativeText(EditorHandler editorHandler, string text) =>
+		internal static void SetNativeText(EditorHandler editorHandler, string text) =>
 			GetNativeEditor(editorHandler).Text = text;
 
-		static int GetCursorStartPosition(EditorHandler editorHandler) =>
+		internal static int GetCursorStartPosition(EditorHandler editorHandler) =>
 			GetNativeEditor(editorHandler).GetCursorPosition();
 
-		static void UpdateCursorStartPosition(EditorHandler editorHandler, int position) =>
+		internal static void UpdateCursorStartPosition(EditorHandler editorHandler, int position) =>
 			GetNativeEditor(editorHandler).SelectionStart = position;
 
 		string GetNativePlaceholderText(EditorHandler editorHandler) =>

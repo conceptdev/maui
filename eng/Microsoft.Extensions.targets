@@ -34,7 +34,7 @@
     />
     <PackageReference
         Update="Microsoft.Extensions.DependencyInjection"
-        Version="$(MicrosoftExtensionsPackageVersion)"
+        Version="$(MicrosoftExtensionsServicingPackageVersion)"
     />
     <PackageReference
         Update="Microsoft.Extensions.DependencyInjection.Abstractions"
@@ -46,7 +46,7 @@
     />
     <PackageReference
         Update="Microsoft.Extensions.Logging.Abstractions"
-        Version="$(MicrosoftExtensionsServicingPackageVersion)"
+        Version="$(MicrosoftExtensionsNewServicingPackageVersion)"
     />
     <PackageReference
         Update="Microsoft.Extensions.Logging"
@@ -90,6 +90,18 @@
         Version="$(MicrosoftAspNetCoreAuthorizationPackageVersion)"
     />
     <PackageReference
+        Update="Microsoft.AspNetCore.Authentication.Google"
+        Version="$(MicrosoftAspNetCoreAuthenticationGooglePackageVersion)"
+    />
+    <PackageReference
+        Update="Microsoft.AspNetCore.Authentication.Facebook"
+        Version="$(MicrosoftAspNetCoreAuthenticationFacebookPackageVersion)"
+    />
+    <PackageReference
+        Update="Microsoft.AspNetCore.Authentication.MicrosoftAccount"
+        Version="$(MicrosoftAspNetCoreAuthenticationMicrosoftAccountPackageVersion)"
+    />
+    <PackageReference
         Update="Microsoft.AspNetCore.Components.WebView"
         Version="$(MicrosoftAspNetCoreComponentsWebViewPackageVersion)"
     />
@@ -114,7 +126,7 @@
         Version="$(MicrosoftCodeAnalysisPublicApiAnalyzersVersion)"
     />
     <PackageReference
-        Update="Tizen.UIExtensions.ElmSharp"
+        Update="Tizen.UIExtensions.NUI"
         Version="$(TizenUIExtensionsVersion)"
     />
     <PackageReference
