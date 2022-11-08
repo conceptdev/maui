@@ -8,7 +8,7 @@
     <MicrosoftExtensionsPackageVersion>6.0.0</MicrosoftExtensionsPackageVersion>
     <MicrosoftExtensionsServicingPackageVersion>6.0.1</MicrosoftExtensionsServicingPackageVersion>
     <MicrosoftExtensionsNewServicingPackageVersion>6.0.2</MicrosoftExtensionsNewServicingPackageVersion>
-    <SystemCodeDomPackageVersion>6.0.0</SystemCodeDomPackageVersion>
+    <SystemCodeDomPackageVersion>7.0.0</SystemCodeDomPackageVersion>
     <!-- xamarin/xamarin-android -->
     <MicrosoftAndroidSdkWindowsPackageVersion>32.0.478</MicrosoftAndroidSdkWindowsPackageVersion>
     <!-- xamarin/xamarin-macios -->
